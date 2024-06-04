@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-4">
+    <h2>Predict Single Event</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="src_ip">Source IP</label>
+            <input type="text" name="src_ip" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="dst_ip">Destination IP</label>
+            <input type="text" name="dst_ip" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="src_port">Source Port</label>
+            <input type="number" name="src_port" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="dst_port">Destination Port</label>
+            <input type="number" name="dst_port" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="protocol">Protocol</label>
+            <select name="protocol" class="form-control" required>
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+                <option value="ICMP">ICMP</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="signature">Signature</label>
+            <input type="text" name="signature" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Predict</button>
+    </form>
+
+    {% if prediction is not none %}
+    <div class="mt-4">
+        <h3>Prediction: 
+            {% if prediction == 1 %}
+            <span class="badge badge-danger">Threat</span>
+            {% else %}
+            <span class="badge badge-success">No Threat</span>
+            {% endif %}
+        </h3>
+        <h4>Details:</h4>
+        <ul class="list-group">
+            <li class="list-group-item">Source IP: {{ src_ip }}</li>
+            <li class="list-group-item">Destination IP: {{ dst_ip }}</li>
+            <li class="list-group-item">Source Port: {{ src_port }}</li>
+            <li class="list-group-item">Destination Port: {{ dst_port }}</li>
+            <li class="list-group-item">Protocol: {{ protocol }}</li>
+            <li class="list-group-item">Signature: {{ signature }}</li>
+        </ul>
+    </div>
+    {% if prediction_proba is not none %}
+    <div class="mt-4">
+        <h4>Probability:</h4>
+        <ul class="list-group">
+            <li class="list-group-item">Non-Threat: {{ prediction_proba[0] }}</li>
+            <li class="list-group-item">Threat: {{ prediction_proba[1] }}</li>
+        </ul>
+    </div>
+    {% endif %}
+    {% if decision_path_dense is not none %}
+    <div class="mt-4">
+        <h4>Decision Path:</h4>
+        <ul class="list-group">
+            {% for row in decision_path_dense %}
+                {% for val in row.tolist() %}
+                    <li class="list-group-item">Value: {{ val }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('save_prediction') }}">
+        <input type="hidden" name="src_ip" value="{{ src_ip }}">
+        <input type="hidden" name="dst_ip" value="{{ dst_ip }}">
+        <input type="hidden" name="src_port" value="{{ src_port }}">
+        <input type="hidden" name="dst_port" value="{{ dst_port }}">
+        <input type="hidden" name="protocol" value="{{ protocol }}">
+        <input type="hidden" name="signature" value="{{ signature }}">
+        <input type="hidden" name="label" value="{{ prediction }}">
+        <button type="submit" class="btn btn-success">Add to Training Data</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Removed Data</h2>
+{% for table in tables %}
+    {{ table|safe }}
+{% endfor %}
+{% endblock %}

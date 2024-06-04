@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-4">
+    <h2>Upload CSV for Batch Prediction</h2>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload_file') }}">
+        <div class="form-group">
+            <input type="file" name="file" class="form-control-file" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
+
+    {% if tables %}
+    <form method="POST" action="{{ url_for('save_predictions') }}" class="mt-4">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Src IP</th>
+                        <th>Dst IP</th>
+                        <th>Src Port</th>
+                        <th>Dst Port</th>
+                        <th>Protocol</th>
+                        <th>Signature</th>
+                        <th>Prediction</th>
+                        <th>Change Threat</th>
+                        <th>Add to Training</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in data.iterrows() %}
+                    <tr>
+                        <td>{{ row[1].src_ip }}</td>
+                        <td>{{ row[1].dst_ip }}</td>
+                        <td>{{ row[1].src_port }}</td>
+                        <td>{{ row[1].dst_port }}</td>
+                        <td>{{ row[1].protocol }}</td>
+                        <td><input type="text" name="signature_{{ loop.index0 }}" value="{{ row[1].signature }}" class="form-control"></td>
+                        <td>
+                            {% if row[1].prediction == 1 %}
+                            <span class="badge badge-danger">Threat</span>
+                            {% else %}
+                            <span class="badge badge-success">No Threat</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <select name="prediction_{{ loop.index0 }}" class="form-control">
+                                <option value="1" {% if row[1].prediction == 1 %}selected{% endif %}>Threat</option>
+                                <option value="0" {% if row[1].prediction == 0 %}selected{% endif %}>Non-Threat</option>
+                            </select>
+                        </td>
+                        <td><input type="checkbox" name="add_to_training_{{ loop.index0 }}" value="1" class="form-check-input"></td>
+                        <input type="hidden" name="src_ip_{{ loop.index0 }}" value="{{ row[1].src_ip }}">
+                        <input type="hidden" name="dst_ip_{{ loop.index0 }}" value="{{ row[1].dst_ip }}">
+                        <input type="hidden" name="src_port_{{ loop.index0 }}" value="{{ row[1].src_port }}">
+                        <input type="hidden" name="dst_port_{{ loop.index0 }}" value="{{ row[1].dst_port }}">
+                        <input type="hidden" name="protocol_{{ loop.index0 }}" value="{{ row[1].protocol }}">
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-success">Save Predictions</button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

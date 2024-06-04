@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-4">
+    <h2>Dashboard</h2>
+    <div class="card-deck">
+        <div class="card">
+            <img class="card-img-top" src="{{ url_for('static', filename='threat_pie_chart.png') }}" alt="Threat Pie Chart">
+            <div class="card-body">
+                <h5 class="card-title">Threat Breakdown</h5>
+                <p class="card-text">Visualization of threats vs non-threats in the trained data.</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Events</h5>
+                <p class="card-text">{{ total_events }} events in the trained data.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

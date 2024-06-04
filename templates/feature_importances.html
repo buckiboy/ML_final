@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-4">
+    <h2>Feature Importances</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Importance</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in data.iterrows() %}
+                <tr>
+                    <td>{{ row[1].Feature }}</td>
+                    <td>{{ row[1].Importance }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

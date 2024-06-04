@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-4">
+    <h2>Add Data Manually</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="src_ip">Source IP</label>
+            <input type="text" name="src_ip" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="dst_ip">Destination IP</label>
+            <input type="text" name="dst_ip" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="src_port">Source Port</label>
+            <input type="number" name="src_port" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="dst_port">Destination Port</label>
+            <input type="number" name="dst_port" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="protocol">Protocol</label>
+            <select name="protocol" class="form-control">
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+                <option value="ICMP">ICMP</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="signature">Signature</label>
+            <input type="text" name="signature" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Data</button>
+    </form>
+</div>
+{% endblock %}

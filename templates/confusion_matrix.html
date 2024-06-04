@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-4">
+    <h2>Confusion Matrix</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Predicted No Threat</th>
+                    <th>Predicted Threat</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Actual No Threat</td>
+                    <td>{{ data.iloc[0, 0] }}</td>
+                    <td>{{ data.iloc[0, 1] }}</td>
+                </tr>
+                <tr>
+                    <td>Actual Threat</td>
+                    <td>{{ data.iloc[1, 0] }}</td>
+                    <td>{{ data.iloc[1, 1] }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
