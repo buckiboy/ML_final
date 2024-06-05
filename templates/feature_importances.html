@@ -11,12 +11,12 @@
                 </tr>
             </thead>
             <tbody>
-            {% for row in data.iterrows() %}
+                {% for _, row in data.iterrows() %}
                 <tr>
-                    <td>{{ row[1].Feature }}</td>
-                    <td>{{ row[1].Importance }}</td>
+                    <td>{{ row['Feature'] }}</td>
+                    <td>{{ row['Importance'] }}</td>
                 </tr>
-            {% endfor %}
+                {% endfor %}
             </tbody>
         </table>
     </div>

@@ -1,17 +1,16 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import os
 import pandas as pd
 import joblib
-import os
+import logging
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import matplotlib.pyplot as plt
-import ipaddress
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc
-import logging
-import numpy as np
+from sklearn.metrics import confusion_matrix  # Ensure this is the correct import
+import ipaddress
+import matplotlib.pyplot as plt
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -63,40 +62,105 @@ def convert_to_ip(df):
     df['dst_ip'] = df['dst_ip'].apply(lambda x: str(ipaddress.IPv4Address(x)))
     return df
 
-# Function to train and save the model
 def train_and_save_model():
-    if os.path.exists('trained_data.csv'):
-        # Load training data if it exists
-        df = pd.read_csv('trained_data.csv')
-    else:
-        df = pd.read_csv('network_traffic.csv')
-        return
-    
-    original_df = df.copy()  # Keep a copy of the original data without one-hot encoding
-    
-    df = preprocess_data(df)
-    X = df.drop('label', axis=1)  # Features for training
-    y = df['label']  # Labels for training
-    
-    # Ensure no NaN values in input data
-    X = X.fillna(0)
-    y = y.fillna(0)
-    
-    # Split data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    try:
+        if os.path.exists('trained_data.csv'):
+            # Load training data if it exists
+            df = pd.read_csv('trained_data.csv')
+        else:
+            df = pd.read_csv('network_traffic.csv')
+            return
 
-    # Train the RandomForest model
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
+        # Save class distribution
+        class_distribution = df['label'].value_counts()
+        class_distribution.to_csv('class_distribution.csv')
 
-    # Save the trained model
-    joblib.dump(model, 'rf_model.pkl')
-    original_df.to_csv('trained_data.csv', index=False)  # Save the original data without one-hot encoding
-    
-   
-    
-    logging.info('Model trained and saved.')
-    flash('Model trained and saved.', 'success')
+        original_df = df.copy()  # Keep a copy of the original data without one-hot encoding
+        
+        df = preprocess_data(df)
+        X = df.drop('label', axis=1)  # Features for training
+        y = df['label']  # Labels for training
+        
+        # Ensure no NaN values in input data
+        X = X.fillna(0)
+        y = y.fillna(0)
+        
+        # Split data into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # Save train and test class distribution
+        train_class_distribution = y_train.value_counts()
+        test_class_distribution = y_test.value_counts()
+        train_class_distribution.to_csv('train_class_distribution.csv')
+        test_class_distribution.to_csv('test_class_distribution.csv')
+
+        # Train the RandomForest model
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        model.fit(X_train, y_train)
+
+        # Save the trained model
+        joblib.dump(model, 'rf_model.pkl')
+        original_df.to_csv('trained_data.csv', index=False)  # Save the original data without one-hot encoding
+        
+        # Make predictions on the test set
+        y_pred = model.predict(X_test)
+
+        # Save actual vs. predicted values
+        actual_vs_predicted = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
+        actual_vs_predicted.to_csv('actual_vs_predicted.csv', index=False)
+
+        # Explicitly use sklearn.metrics.confusion_matrix
+        from sklearn.metrics import confusion_matrix as sk_confusion_matrix
+        print(f"Using confusion_matrix from sklearn.metrics: {sk_confusion_matrix}")
+
+        # Calculate the confusion matrix
+        cm = sk_confusion_matrix(y_test, y_pred)  # This is the correct usage
+        # Check the shape of the confusion matrix
+        if cm.shape == (1, 1):
+            cm = [[cm[0][0], 0], [0, 0]]  # Handle single-class case
+
+        print("Confusion Matrix:")
+        print(cm)
+
+        # Convert the confusion matrix to a DataFrame for easy saving and display
+        cm_df = pd.DataFrame(cm, index=['Actual 0', 'Actual 1'], columns=['Predicted 0', 'Predicted 1'])
+        # Save the confusion matrix to a CSV file
+        cm_df.to_csv('confusion_matrix.csv')
+        
+        # Calculate and save feature importances
+        feature_importances = model.feature_importances_
+        feature_names = X.columns
+        # Create a DataFrame for feature importances
+        fi_df = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
+        # Save the feature importances to a CSV file
+        fi_df.to_csv('feature_importances.csv', index=False)
+        
+        logging.info('Model trained and saved with confusion matrix and feature importances.')
+        flash('Model trained and saved with confusion matrix and feature importances.', 'success')
+    except Exception as e:
+        logging.error(f'Error in train_and_save_model: {e}')
+        raise
+
+@app.route('/debug_data')
+@login_required
+def debug_data():
+    try:
+        class_distribution = pd.read_csv('class_distribution.csv') if os.path.exists('class_distribution.csv') else None
+        train_class_distribution = pd.read_csv('train_class_distribution.csv') if os.path.exists('train_class_distribution.csv') else None
+        test_class_distribution = pd.read_csv('test_class_distribution.csv') if os.path.exists('test_class_distribution.csv') else None
+        actual_vs_predicted = pd.read_csv('actual_vs_predicted.csv') if os.path.exists('actual_vs_predicted.csv') else None
+
+        return render_template('debug_data.html', 
+                               class_distribution=class_distribution,
+                               train_class_distribution=train_class_distribution,
+                               test_class_distribution=test_class_distribution,
+                               actual_vs_predicted=actual_vs_predicted)
+    except Exception as e:
+        logging.error(f'Error loading debug data: {e}')
+        flash('Error loading debug data.', 'danger')
+        return redirect(url_for('index'))
+
+
 
 # Function to create a pie chart of threat breakdown
 def create_pie_chart():
@@ -299,11 +363,17 @@ def trained_data():
 @app.route('/retrain', methods=['GET', 'POST'])
 @login_required
 def retrain():
-    if request.method == 'POST':
-        train_and_save_model()
-        flash('Model retrained successfully!', 'success')
+    try:
+        if request.method == 'POST':
+            train_and_save_model()
+            flash('Model retrained successfully!', 'success')
+            return redirect(url_for('index'))
+    except Exception as e:
+        logging.error(f'Error in /retrain route: {e}')
+        flash(f'Error retraining model: {e}', 'danger')
         return redirect(url_for('index'))
     return render_template('retrain.html')
+
 
 @app.route('/removed_data')
 @login_required
@@ -381,10 +451,9 @@ def edit_label(index):
         flash('Label updated successfully!', 'success')
         return redirect(url_for('trained_data'))
 
-    current_label = df.at[index, 'label']
+    current_label = df.at(index, 'label')
     df = convert_to_ip(df)  # Assuming convert_to_ip is defined elsewhere
     return render_template('edit_label.html', index=index, current_label=current_label)
-
 
 @app.route('/feature_importances')
 @login_required
@@ -392,6 +461,8 @@ def feature_importances():
     try:
         if os.path.exists('feature_importances.csv'):
             data = pd.read_csv('feature_importances.csv')
+            print(f"Feature Importances Data:\n{data}")  # Debug statement to log the content of the CSV
+            logging.debug(f"Feature Importances Data:\n{data}")  # Log the content of the CSV
             return render_template('feature_importances.html', data=data)
         else:
             flash('Feature importances not available.', 'danger')
@@ -401,12 +472,14 @@ def feature_importances():
         flash('Error loading feature importances.', 'danger')
         return redirect(url_for('index'))
 
-@app.route('/confusion_matrix')
+@app.route('/show_confusion_matrix')
 @login_required
-def confusion_matrix():
+def show_confusion_matrix():
     try:
         if os.path.exists('confusion_matrix.csv'):
             data = pd.read_csv('confusion_matrix.csv')
+            print(f"Confusion Matrix Data:\n{data}")  # Debug statement to log the content of the CSV
+            logging.debug(f"Confusion Matrix Data:\n{data}")  # Log the content of the CSV
             return render_template('confusion_matrix.html', data=data)
         else:
             flash('Confusion matrix not available.', 'danger')
@@ -415,6 +488,8 @@ def confusion_matrix():
         logging.error(f'Error loading confusion matrix: {e}')
         flash('Error loading confusion matrix.', 'danger')
         return redirect(url_for('index'))
+
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)

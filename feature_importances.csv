@@ -1,16 +1,17 @@
 Feature,Importance
-src_ip,0.0
+src_ip,0.010139713981705321
 dst_ip,0.0
-src_port,0.3812689612821429
-dst_port,0.1356865058384467
-protocol_TCP,0.06016207791221826
-protocol_UDP,0.06130888752595183
+src_port,0.35370640253516633
+dst_port,0.2186310267058223
+protocol_TCP,0.116665354847173
+protocol_UDP,0.07382045563863746
 protocol_nan,0.0
-signature_Brute Force Attempt,0.09801623464196613
-signature_DNS Amplification,0.057281844761183025
-signature_Normal Traffic,0.009338010267166698
-signature_TEST,0.0
-signature_Telnet connection,0.05914381728264438
-signature_Test,0.04558522888244475
-signature_test,0.09220843160583515
+signature_Brute Force Attempt,0.06940081429980419
+signature_DNS Amplification,0.050489745944291405
+signature_Normal Traffic,0.0
+signature_TEST,0.012751857196301638
+signature_Telnet connection,0.02951208716149794
+signature_Test,0.03821010949528266
+signature_test,0.024596332087914584
+signature_testing labelling,0.0020761001064031363
 signature_nan,0.0

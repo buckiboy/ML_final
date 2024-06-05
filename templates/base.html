@@ -44,7 +44,10 @@
                     <a class="nav-link" href="{{ url_for('feature_importances') }}">Feature Importances</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('confusion_matrix') }}">Confusion Matrix</a>
+                    <a class="nav-link" href="{{ url_for('show_confusion_matrix') }}">Confusion Matrix</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('debug_data') }}">Debug Data</a>
                 </li>
                 {% if current_user.is_authenticated %}
                 <li class="nav-item">

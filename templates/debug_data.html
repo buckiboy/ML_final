@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-4">
+    <h2>Debug Data</h2>
+
+    <h3>Class Distribution in Training Data</h3>
+    {% if class_distribution is not none %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _, row in class_distribution.iterrows() %}
+                    <tr>
+                        <td>{{ row[0] }}</td>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No class distribution data available.</p>
+    {% endif %}
+
+    <h3>Class Distribution in Training Set</h3>
+    {% if train_class_distribution is not none %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _, row in train_class_distribution.iterrows() %}
+                    <tr>
+                        <td>{{ row[0] }}</td>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No class distribution data available for training set.</p>
+    {% endif %}
+
+    <h3>Class Distribution in Test Set</h3>
+    {% if test_class_distribution is not none %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _, row in test_class_distribution.iterrows() %}
+                    <tr>
+                        <td>{{ row[0] }}</td>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No class distribution data available for test set.</p>
+    {% endif %}
+
+    <h3>Actual vs Predicted</h3>
+    {% if actual_vs_predicted is not none %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Actual</th>
+                    <th>Predicted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _, row in actual_vs_predicted.iterrows() %}
+                    <tr>
+                        <td>{{ row['Actual'] }}</td>
+                        <td>{{ row['Predicted'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No actual vs predicted data available.</p>
+    {% endif %}
+</div>
+{% endblock %}

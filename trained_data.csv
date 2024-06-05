@@ -14,3 +14,4 @@ src_ip,dst_ip,src_port,dst_port,protocol,signature,label
 192.168.1.1,192.168.1.2,676767,7878,TCP,Test,1.0
 10.0.0.1,192.168.1.22,1212,12,TCP,testing labelling,
 192.168.1.1,192.168.1.22,32234,23,TCP,,0.0
+192.168.1.11,192.168.1.12,53,53,UDP,DNS Amplification,1.0
