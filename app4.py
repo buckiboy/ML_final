@@ -226,6 +226,9 @@ def index():
 @app.route('/prediction', methods=['GET', 'POST'])
 @login_required
 def prediction_form():
+    feature_importances = None  # Initialize feature_importances
+    feature_names = None  # Initialize feature_names
+    
     if request.method == 'POST':
         src_ip = request.form['src_ip']
         dst_ip = request.form['dst_ip']
@@ -233,11 +236,36 @@ def prediction_form():
         dst_port = int(request.form['dst_port'])
         protocol = request.form['protocol']
         signature = request.form['signature']
+        sample_weight = float(request.form['sample_weight'])
+        
+        # Get feature weights
+        weight_src_ip = float(request.form['weight_src_ip'])
+        weight_dst_ip = float(request.form['weight_dst_ip'])
+        weight_src_port = float(request.form['weight_src_port'])
+        weight_dst_port = float(request.form['weight_dst_port'])
+        weight_protocol = float(request.form['weight_protocol'])
+        weight_signature = float(request.form['weight_signature'])
         
         try:
             # Create a DataFrame for the input data
-            df = pd.DataFrame([[src_ip, dst_ip, src_port, dst_port, protocol, signature]], columns=['src_ip', 'dst_ip', 'src_port', 'dst_port', 'protocol', 'signature'])
+            df = pd.DataFrame([[src_ip, dst_ip, src_port, dst_port, protocol, signature]], 
+                              columns=['src_ip', 'dst_ip', 'src_port', 'dst_port', 'protocol', 'signature'])
             df = preprocess_data(df)
+            
+            # Apply feature weights
+            df['src_ip'] *= weight_src_ip
+            df['dst_ip'] *= weight_dst_ip
+            df['src_port'] *= weight_src_port
+            df['dst_port'] *= weight_dst_port
+            if f'protocol_{protocol}' in df.columns:
+                df[f'protocol_{protocol}'] *= weight_protocol
+            else:
+                df[f'protocol_{protocol}'] = weight_protocol
+            if f'signature_{signature}' in df.columns:
+                df[f'signature_{signature}'] *= weight_signature
+            else:
+                df[f'signature_{signature}'] = weight_signature
+
             df = df.reindex(columns=model.feature_names_in_, fill_value=0)  # Ensure all features match
             prediction = model.predict(df)
             prediction_proba = model.predict_proba(df)
@@ -247,19 +275,31 @@ def prediction_form():
             decision_path_dense = node_indicator.todense()
 
             logging.debug(f'Single prediction: {prediction[0]} for data {df}')
+            
+            # Get feature importances
+            feature_importances = model.feature_importances_
+            feature_names = df.columns.tolist()
+            
             return render_template('prediction_form.html', prediction=prediction[0], 
                                    prediction_proba=prediction_proba[0], 
                                    decision_path_dense=decision_path_dense, 
-                                   src_ip=src_ip, dst_ip=dst_ip, src_port=src_port, dst_port=dst_port, protocol=protocol, signature=signature)
+                                   src_ip=src_ip, dst_ip=dst_ip, src_port=src_port, dst_port=dst_port, protocol=protocol, signature=signature,
+                                   feature_importances=feature_importances, feature_names=feature_names,
+                                   weight_src_ip=weight_src_ip, weight_dst_ip=weight_dst_ip, 
+                                   weight_src_port=weight_src_port, weight_dst_port=weight_dst_port,
+                                   weight_protocol=weight_protocol, weight_signature=weight_signature)
         except ValueError as e:
             logging.error(f'Error in prediction: {e}')
             flash(f'Error in prediction: {e}', 'danger')
             return render_template('prediction_form.html', prediction=None, 
                                    prediction_proba=None, 
-                                   decision_path_dense=None)
+                                   decision_path_dense=None, 
+                                   feature_importances=feature_importances, feature_names=feature_names)
     return render_template('prediction_form.html', prediction=None, 
                            prediction_proba=None, 
-                           decision_path_dense=None)
+                           decision_path_dense=None,
+                           feature_importances=feature_importances, feature_names=feature_names)
+
 
 @app.route('/save_prediction', methods=['POST'])
 @login_required
@@ -441,20 +481,42 @@ def delete_entry(index):
 @app.route('/edit_label/<int:index>', methods=['GET', 'POST'])
 @login_required
 def edit_label(index):
-    df = pd.read_csv('trained_data.csv')
-    if request.method == 'POST':
-        # Update the label of the selected row
-        new_label = int(request.form['new_label'])
-        df.at[index, 'label'] = new_label  # Corrected assignment syntax
-        df.to_csv('trained_data.csv', index=False)
-        logging.info(f'Updated label at index {index} to {new_label}')
-        flash('Label updated successfully!', 'success')
+    try:
+        df = pd.read_csv('trained_data.csv')
+    except FileNotFoundError:
+        flash('Training data file not found.', 'danger')
+        return redirect(url_for('trained_data'))
+    except Exception as e:
+        logging.error(f'Error reading training data file: {e}')
+        flash('An error occurred while reading the training data file.', 'danger')
         return redirect(url_for('trained_data'))
 
-    current_label = df.at(index, 'label')
+    if request.method == 'POST':
+        try:
+            # Update the label of the selected row
+            new_label = int(request.form['new_label'])
+            df.at[index, 'label'] = new_label  # Corrected assignment syntax
+            df.to_csv('trained_data.csv', index=False)
+            logging.info(f'Updated label at index {index} to {new_label}')
+            flash('Label updated successfully!', 'success')
+            return redirect(url_for('trained_data'))
+        except Exception as e:
+            logging.error(f'Error updating label: {e}')
+            flash(f'Error updating label: {e}', 'danger')
+            return redirect(url_for('edit_label', index=index))
+
+    try:
+        current_label = df.at[index, 'label']
+    except KeyError:
+        flash('Invalid index specified.', 'danger')
+        return redirect(url_for('trained_data'))
+    except Exception as e:
+        logging.error(f'Error accessing label at index {index}: {e}')
+        flash('An error occurred while accessing the label.', 'danger')
+        return redirect(url_for('trained_data'))
+
     df = convert_to_ip(df)  # Assuming convert_to_ip is defined elsewhere
     return render_template('edit_label.html', index=index, current_label=current_label)
-
 @app.route('/feature_importances')
 @login_required
 def feature_importances():

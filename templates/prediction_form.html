@@ -31,6 +31,35 @@
             <label for="signature">Signature</label>
             <input type="text" name="signature" class="form-control" required>
         </div>
+        <div class="form-group">
+            <label for="sample_weight">Sample Weight</label>
+            <input type="number" class="form-control" id="sample_weight" name="sample_weight" step="0.1" value="1.0" required>
+        </div>
+        <h4>Feature Weights</h4>
+        <div class="form-group">
+            <label for="weight_src_ip">Weight for Source IP</label>
+            <input type="number" class="form-control" id="weight_src_ip" name="weight_src_ip" step="0.1" value="1.0" required>
+        </div>
+        <div class="form-group">
+            <label for="weight_dst_ip">Weight for Destination IP</label>
+            <input type="number" class="form-control" id="weight_dst_ip" name="weight_dst_ip" step="0.1" value="1.0" required>
+        </div>
+        <div class="form-group">
+            <label for="weight_src_port">Weight for Source Port</label>
+            <input type="number" class="form-control" id="weight_src_port" name="weight_src_port" step="0.1" value="1.0" required>
+        </div>
+        <div class="form-group">
+            <label for="weight_dst_port">Weight for Destination Port</label>
+            <input type="number" class="form-control" id="weight_dst_port" name="weight_dst_port" step="0.1" value="1.0" required>
+        </div>
+        <div class="form-group">
+            <label for="weight_protocol">Weight for Protocol</label>
+            <input type="number" class="form-control" id="weight_protocol" name="weight_protocol" step="0.1" value="1.0" required>
+        </div>
+        <div class="form-group">
+            <label for="weight_signature">Weight for Signature</label>
+            <input type="number" class="form-control" id="weight_signature" name="weight_signature" step="0.1" value="1.0" required>
+        </div>
         <button type="submit" class="btn btn-primary">Predict</button>
     </form>
 
@@ -51,6 +80,15 @@
             <li class="list-group-item">Destination Port: {{ dst_port }}</li>
             <li class="list-group-item">Protocol: {{ protocol }}</li>
             <li class="list-group-item">Signature: {{ signature }}</li>
+        </ul>
+        <h4>Applied Feature Weights:</h4>
+        <ul class="list-group">
+            <li class="list-group-item">Weight for Source IP: {{ weight_src_ip }}</li>
+            <li class="list-group-item">Weight for Destination IP: {{ weight_dst_ip }}</li>
+            <li class="list-group-item">Weight for Source Port: {{ weight_src_port }}</li>
+            <li class="list-group-item">Weight for Destination Port: {{ weight_dst_port }}</li>
+            <li class="list-group-item">Weight for Protocol: {{ weight_protocol }}</li>
+            <li class="list-group-item">Weight for Signature: {{ weight_signature }}</li>
         </ul>
     </div>
     {% if prediction_proba is not none %}
