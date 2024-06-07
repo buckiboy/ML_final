@@ -10,6 +10,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix  # Ensure this is the correct import
 import ipaddress
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend
+
 import matplotlib.pyplot as plt
 
 # Initialize Flask app
@@ -68,8 +71,12 @@ def train_and_save_model():
             # Load training data if it exists
             df = pd.read_csv('trained_data.csv')
         else:
-            df = pd.read_csv('network_traffic.csv')
-            return
+            if os.path.exists('network_traffic.csv'):
+                # Load initial training data if it exists
+                df = pd.read_csv('network_traffic.csv')
+            else:
+                logging.error('No training data available to train the model.')
+                return "No training data available"
 
         # Save class distribution
         class_distribution = df['label'].value_counts()
@@ -111,16 +118,12 @@ def train_and_save_model():
 
         # Explicitly use sklearn.metrics.confusion_matrix
         from sklearn.metrics import confusion_matrix as sk_confusion_matrix
-        print(f"Using confusion_matrix from sklearn.metrics: {sk_confusion_matrix}")
+        logging.debug(f"Using confusion_matrix from sklearn.metrics: {sk_confusion_matrix}")
 
         # Calculate the confusion matrix
-        cm = sk_confusion_matrix(y_test, y_pred)  # This is the correct usage
-        # Check the shape of the confusion matrix
-        if cm.shape == (1, 1):
-            cm = [[cm[0][0], 0], [0, 0]]  # Handle single-class case
-
-        print("Confusion Matrix:")
-        print(cm)
+        cm = sk_confusion_matrix(y_test, y_pred, labels=[0, 1])  # Specify labels explicitly
+        logging.debug("Confusion Matrix:")
+        logging.debug(cm)
 
         # Convert the confusion matrix to a DataFrame for easy saving and display
         cm_df = pd.DataFrame(cm, index=['Actual 0', 'Actual 1'], columns=['Predicted 0', 'Predicted 1'])
@@ -136,10 +139,10 @@ def train_and_save_model():
         fi_df.to_csv('feature_importances.csv', index=False)
         
         logging.info('Model trained and saved with confusion matrix and feature importances.')
-        flash('Model trained and saved with confusion matrix and feature importances.', 'success')
+        return "Model trained and saved with confusion matrix and feature importances."
     except Exception as e:
         logging.error(f'Error in train_and_save_model: {e}')
-        raise
+        return str(e)
 
 @app.route('/debug_data')
 @login_required
@@ -172,9 +175,10 @@ def create_pie_chart():
         labels = ['Non-Threat', 'Threat']
         sizes = [threat_count.get(0, 0), threat_count.get(1, 0)]
         fig1, ax1 = plt.subplots()
-        ax1.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+        ax1.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)  # Corrected format string
         ax1.axis('equal')
         plt.savefig('static/threat_pie_chart.png')
+        plt.close(fig1)  # Close the figure to avoid warnings
     else:
         logging.debug('No trained data available for pie chart.')
 
@@ -222,6 +226,7 @@ def index():
         data = pd.read_csv('trained_data.csv')
         total_events = len(data)
     return render_template('index.html', total_events=total_events)
+
 
 @app.route('/prediction', methods=['GET', 'POST'])
 @login_required
